@@ -14,8 +14,8 @@
    Chromium 相關瀏覽器需要開啟 [Dev mode](https://www.tampermonkey.net/faq.php#Q209)
 
 2. 
-   - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/main/src/ReadOrNotAI.user.js)
-   - 沒有本機 Ollama: [安裝 ReadOrNot 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/main/src/ReadOrNot.user.js)
+   - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)
+   - 沒有本機 Ollama: [安裝 ReadOrNot 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)
 
 ## 使用方式
 

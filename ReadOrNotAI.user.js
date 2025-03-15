@@ -5,8 +5,8 @@
 // @description  懸停於連結上時，使用本機 Ollama API 預覽文章內容並提供評估指標
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
-// @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/main/src/ReadOrNotAI.user.js
-// @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/main/src/ReadOrNotAI.user.js
+// @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js
+// @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js
 // @match        *://*/*
 // @grant        GM_xmlhttpRequest
 // @connect      *

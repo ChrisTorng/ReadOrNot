@@ -5,8 +5,8 @@
 // @description  懸停於連結上時，預覽文章內容並依關鍵字提供評估指標
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
-// @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/main/src/ReadOrNot.user.js
-// @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/main/src/ReadOrNot.user.js
+// @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
+// @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
 // @match        *://*/*
 // @grant        GM_xmlhttpRequest
 // @connect      *
