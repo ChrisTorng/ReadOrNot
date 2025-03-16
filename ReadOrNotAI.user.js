@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ReadOrNotAI - 要看不要看?
 // @namespace    https://github.com/ChrisTorng/ReadOrNot
-// @version      2025_03_16_0.2
+// @version      2025_03_16_0.3
 // @description  懸停於連結上時，使用本機 Ollama API 預覽文章內容並提供評估指標
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
@@ -125,6 +125,13 @@
             border-top: 1px solid #eee;
             padding-top: 5px;
             text-align: right;
+        }
+
+        .readornot-preview .ai-loading {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+            font-style: italic;
         }
 
         .readornot-settings {
@@ -406,7 +413,11 @@
                     const title = doc.querySelector('title')?.textContent || '無標題';
                     const content = extractMainContent(doc);
                     
-                    // 使用 Ollama 分析內容
+                    // 先顯示關鍵字比對結果
+                    const keywordAnalysis = getKeywordAnalysis(title, content);
+                    updatePreview(title, keywordAnalysis, true);
+                    
+                    // 然後在背景中使用 Ollama 分析內容
                     analyzeWithOllama(content, title, url);
                 } else {
                     previewElement.innerHTML = `
@@ -453,6 +464,30 @@
         return mainContent.substring(0, 5000); // 限制文字長度
     }
 
+    // 使用關鍵字分析內容
+    function getKeywordAnalysis(title, content) {
+        // 簡單的關鍵字判斷來模擬 AI 分析
+        const wordCount = content.split(' ').length;
+        const hasEmotionalWords = /驚人|震驚|爆|超扯|慘|太扯|天才|最強|怒|氣炸|崩潰|超美|吃不下|可怕/.test(content + title);
+        const isCelebrityRelated = /藝人|明星|網紅|歌手|演員|主持人|網友|粉絲|直播|開箱/.test(content);
+        const hasSourceCitation = /研究|專家|調查|報告|表示|指出|分析|數據|證實/.test(content);
+        const hasUsefulInfo = /教學|如何|方法|步驟|技巧|秘訣|建議|解決|提升|改善|注意|預防/.test(content);
+        
+        return {
+            summary: '這是基於關鍵字的初步分析結果。正在使用 AI 進行更詳細的分析...',
+            metrics: {
+                informationDensity: hasUsefulInfo ? 3 : 1,
+                emotionalImpact: hasEmotionalWords ? 4 : 2,
+                perspective: 3,
+                originality: isCelebrityRelated ? 1 : 3,
+                credibility: hasSourceCitation ? 3 : 1,
+                usefulness: hasUsefulInfo ? 4 : 1
+            },
+            readingTime: Math.max(1, Math.round(wordCount / 500)),
+            isKeywordAnalysis: true
+        };
+    }
+
     // 使用 Ollama API 分析內容
     function analyzeWithOllama(content, title, url) {
         if (isAnalyzing) return;
@@ -460,14 +495,6 @@
         
         const settings = getSettings();
         
-        // 顯示處理中訊息
-        previewElement.innerHTML = `
-            <h3>${title}</h3>
-            <div class="loading">
-                <p>正在使用 AI 分析內容...</p>
-            </div>
-        `;
-
         // 建立提示詞
         const prompt = `
 請分析以下網頁內容，提供簡短摘要、評估指標和閱讀時間估計。
@@ -540,59 +567,31 @@
                         throw new Error('找不到有效的 JSON 回應');
                     }
 
-                    console.log("jsonMatch", jsonMatch);
                     const jsonStr = jsonMatch[0];
                     const analysis = JSON.parse(jsonStr);
-                    console.log("analysis", analysis);
 
                     // 更新預覽視窗
-                    updatePreview(title, analysis);
+                    updatePreview(title, analysis, false);
                 } catch (error) {
                     console.error('解析 AI 回應失敗:', error);
-                    fallbackAnalysis(title, content);
                 }
             })
             .catch(error => {
                 console.error('AI 分析錯誤:', error);
-                fallbackAnalysis(title, content);
             })
             .finally(() => {
                 isAnalyzing = false;
             });
     }
 
-    // 當 AI 分析失敗時的備用分析
-    function fallbackAnalysis(title, content) {
-        // 簡單的關鍵字判斷來模擬 AI 分析
-        const wordCount = content.split(' ').length;
-        const hasEmotionalWords = /驚人|震驚|爆|超扯|慘|太扯|天才|最強|怒|氣炸|崩潰|超美|吃不下|可怕/.test(content + title);
-        const isCelebrityRelated = /藝人|明星|網紅|歌手|演員|主持人|網友|粉絲|直播|開箱/.test(content);
-        const hasSourceCitation = /研究|專家|調查|報告|表示|指出|分析|數據|證實/.test(content);
-        const hasUsefulInfo = /教學|如何|方法|步驟|技巧|秘訣|建議|解決|提升|改善|注意|預防/.test(content);
-        
-        const analysis = {
-            summary: '由於 AI 分析無法完成，這是基於關鍵字的簡易預估。若需準確分析，請確保本機 Ollama 服務正常運作。',
-            metrics: {
-                informationDensity: hasUsefulInfo ? 3 : 1,
-                emotionalImpact: hasEmotionalWords ? 4 : 2,
-                perspective: 3,
-                originality: isCelebrityRelated ? 1 : 3,
-                credibility: hasSourceCitation ? 3 : 1,
-                usefulness: hasUsefulInfo ? 4 : 1
-            },
-            readingTime: Math.max(1, Math.round(wordCount / 500))
-        };
-        
-        updatePreview(title, analysis);
-    }
-
     // 更新預覽視窗內容
-    function updatePreview(title, analysis) {
+    function updatePreview(title, analysis, isLoading) {
         if (!previewElement) return;
         
         const starRating = (count) => '★'.repeat(count) + '☆'.repeat(5 - count);
         
-        previewElement.innerHTML = `
+        // 顯示分析結果
+        let html = `
             <h3>${title}</h3>
             <p class="summary">${analysis.summary}</p>
             <div class="metrics">
@@ -625,6 +624,13 @@
                 閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot AI 預覽
             </div>
         `;
+
+        // 如果是關鍵字分析且仍在載入AI結果，顯示載入中的訊息
+        if (isLoading) {
+            html += `<div class="ai-loading">正在使用 AI 進行更深入的分析...</div>`;
+        }
+        
+        previewElement.innerHTML = html;
     }
 
     // 當 DOM 發生變化時重新設定連結監聽

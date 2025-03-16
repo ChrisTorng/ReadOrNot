@@ -18,7 +18,7 @@
    - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)<br>
      第一次使用，必須輸入 Ollama 模型名稱，之後可由 Tampermonkey 選單進行修改。
 
-3. 若出現 cross-origin source 警告，請將 `@connect` 權限設定為 `*`
+3. 若出現 Tampermonkey cross-origin source 警告，請按 `Always allow all domains` 允許存取目標網頁內容
 
 ## 使用方式
 
