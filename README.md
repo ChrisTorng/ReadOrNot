@@ -1,4 +1,4 @@
-# ReadOrNot - 要不要看?
+# ReadOrNot - 要看不要看?
 
 懸停於連結上時，預覽文章內容並依關鍵字提供評估指標，幫助您決定是否值得點閱。
 
@@ -17,6 +17,8 @@
    - 沒有本機 Ollama: [安裝 ReadOrNot 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)
    - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)<br>
      第一次使用，必須輸入 Ollama 模型名稱，之後可由 Tampermonkey 選單進行修改。
+
+3. 若出現 cross-origin source 警告，請將 `@connect` 權限設定為 `*`
 
 ## 使用方式
 
