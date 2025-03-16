@@ -1,6 +1,6 @@
 # ReadOrNot - 要看不要看?
 
-懸停於連結上時，預覽文章內容並依關鍵字提供評估指標，幫助您決定是否值得點閱。
+懸停於連結上時，預覽文章內容並依關鍵字或由 AI 提供評估指標，幫助您決定是否值得點閱。
 
 ## 功能特色
 
@@ -13,12 +13,11 @@
 1. 安裝 [Tampermonkey](https://www.tampermonkey.net/) 擴充套件<br>
    Chromium 相關瀏覽器需要開啟 [Dev mode](https://www.tampermonkey.net/faq.php#Q209)
 
-2. 
-   - 沒有本機 Ollama: [安裝 ReadOrNot 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js)
-   - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)<br>
-     第一次使用，必須輸入 Ollama 模型名稱，之後可由 Tampermonkey 選單進行修改。
+2. [安裝 ReadOrNot 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js)
 
-3. 若出現 Tampermonkey cross-origin source 警告，請按 `Always allow all domains` 允許存取目標網頁內容
+3. 若有安裝本機 Ollama 且有執行模型: 在連結上顯示的分析視窗右下角，點 [設定] 鈕，輸入本機 Ollama URL 及模型名稱，按 [測試連結] 確認成功後，[儲存設定]。
+
+4. 若出現 Tampermonkey cross-origin source 警告，請按 `Always allow all domains` 允許存取目標網頁內容
 
 ## 使用方式
 

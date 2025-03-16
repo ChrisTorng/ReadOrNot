@@ -1,19 +1,57 @@
 // ==UserScript==
 // @name         ReadOrNot - 要看不要看?
 // @namespace    https://github.com/ChrisTorng/ReadOrNot
-// @version      2025_03_16_0.2
-// @description  懸停於連結上時，預覽文章內容並依關鍵字提供評估指標
+// @version      2025_03_16_0.3
+// @description  懸停於連結上時，使用本機 Ollama API 預覽文章內容並提供評估指標
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
 // @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
 // @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
 // @match        *://*/*
 // @grant        GM_xmlhttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
 // @connect      *
+// @connect      localhost
 // ==/UserScript==
 
 (function() {
     'use strict';
+
+    // Ollama API 設定
+    const OLLAMA_API_URL = 'http://localhost:11434/api/generate'; // 本機 Ollama 服務位址
+    const DEFAULT_MODEL = undefined; // 預設模型名稱，作為建議值
+    const ANALYSIS_TIMEOUT = 10000; // AI 分析逾時時間 (毫秒)
+    
+    // 從儲存中取得模型名稱，如果沒有則提示使用者輸入
+    function getModelName() {
+        let modelName = GM_getValue('ollama_model');
+        if (!modelName) {
+            modelName = window.prompt(
+                '請輸入您的 Ollama 模型名稱 (例如: llama3, mistral, gemma)',
+                DEFAULT_MODEL
+            );
+            if (modelName) {
+                GM_setValue('ollama_model', modelName);
+            } else {
+                // 如果使用者取消，則使用預設值
+                modelName = DEFAULT_MODEL;
+                GM_setValue('ollama_model', modelName);
+            }
+        }
+        return modelName;
+    }
+    
+    // 在 Tampermonkey 選單中註冊更改模型的功能
+    GM_registerMenuCommand('更改 Ollama 模型名稱', () => {
+        const currentModel = GM_getValue('ollama_model', DEFAULT_MODEL);
+        const newModel = window.prompt('請輸入您的 Ollama 模型名稱:', currentModel);
+        if (newModel) {
+            GM_setValue('ollama_model', newModel);
+            alert(`Ollama 模型已更新為: ${newModel}`);
+        }
+    });
 
     // 設定樣式
     const style = document.createElement('style');
@@ -88,6 +126,74 @@
             padding-top: 5px;
             text-align: right;
         }
+
+        .readornot-preview .ai-loading {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .readornot-preview-settings {
+            cursor: pointer;
+            background: #f1f1f1;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .readornot-preview-settings:hover {
+            background: #e0e0e0;
+        }
+
+        .readornot-config {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            z-index: 10001;
+        }
+
+        .readornot-config h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .readornot-config label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .readornot-config input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 15px;
+        }
+
+        .readornot-config button {
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .readornot-config .close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+        }
     `;
     document.head.appendChild(style);
 
@@ -95,6 +201,134 @@
     let previewElement = null;
     let hoverTimer = null;
     let currentLink = null;
+    let isAnalyzing = false;
+
+    // 檢查本機儲存的設定
+    function getSettings() {
+        const defaultSettings = {
+            ollamaApiUrl: OLLAMA_API_URL,
+            ollamaModel: GM_getValue('ollama_model', DEFAULT_MODEL)
+        };
+
+        const savedSettings = localStorage.getItem('readornot-settings');
+        return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+    }
+
+    // 儲存設定
+    function saveSettings(settings) {
+        localStorage.setItem('readornot-settings', JSON.stringify(settings));
+        // 同時更新 Tampermonkey 儲存的模型名稱
+        if (settings.ollamaModel) {
+            GM_setValue('ollama_model', settings.ollamaModel);
+        }
+    }
+
+    // 建立設定按鈕 (已移入預覽視窗內，此函數不再建立獨立的按鈕)
+    function createSettingsButton() {
+        // 不需建立全域按鈕，因為已經加入到預覽視窗內
+        console.log('ReadOrNot 設定按鈕已整合到預覽視窗中');
+    }
+
+    // 顯示設定面板
+    function showConfigPanel() {
+        const settings = getSettings();
+        
+        const configPanel = document.createElement('div');
+        configPanel.className = 'readornot-config';
+        configPanel.innerHTML = `
+            <span class="close">&times;</span>
+            <h3>ReadOrNot AI 設定</h3>
+            <form>
+                <label for="ollama-api">Ollama API 網址:</label>
+                <input type="text" id="ollama-api" value="${settings.ollamaApiUrl}">
+                
+                <label for="ollama-model">Ollama 模型名稱:</label>
+                <input type="text" id="ollama-model" value="${settings.ollamaModel}">
+                
+                <button type="button" id="save-settings">儲存設定</button>
+                <button type="button" id="test-connection">測試連接</button>
+            </form>
+            <div id="connection-status"></div>
+        `;
+        document.body.appendChild(configPanel);
+        
+        // 關閉按鈕
+        configPanel.querySelector('.close').addEventListener('click', () => {
+            document.body.removeChild(configPanel);
+        });
+        
+        // 儲存設定
+        configPanel.querySelector('#save-settings').addEventListener('click', () => {
+            const newSettings = {
+                ollamaApiUrl: configPanel.querySelector('#ollama-api').value,
+                ollamaModel: configPanel.querySelector('#ollama-model').value
+            };
+            saveSettings(newSettings);
+            document.body.removeChild(configPanel);
+        });
+        
+        // 測試連接
+        configPanel.querySelector('#test-connection').addEventListener('click', () => {
+            const apiUrl = configPanel.querySelector('#ollama-api').value;
+            const model = configPanel.querySelector('#ollama-model').value;
+            const statusElement = configPanel.querySelector('#connection-status');
+            
+            statusElement.textContent = '測試連接中...';
+            
+            testOllamaConnection(apiUrl, model)
+                .then(isAvailable => {
+                    if (isAvailable) {
+                        statusElement.textContent = '✓ 連接成功！Ollama 服務正常運作。';
+                        statusElement.style.color = 'green';
+                    } else {
+                        statusElement.textContent = '✗ 無法連接到 Ollama 服務，請檢查 API 網址及模型名稱。';
+                        statusElement.style.color = 'red';
+                    }
+                })
+                .catch(error => {
+                    statusElement.textContent = `✗ 發生錯誤: ${error.message}`;
+                    statusElement.style.color = 'red';
+                });
+        });
+    }
+
+    // 測試 Ollama 連接
+    function testOllamaConnection(apiUrl, model) {
+        return new Promise((resolve, reject) => {
+            const testPrompt = "Say 'ReadOrNot connection successful'";
+            
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: apiUrl,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({
+                    model: model,
+                    prompt: testPrompt,
+                    stream: false
+                }),
+                onload: function(response) {
+                    try {
+                        if (response.status === 200) {
+                            const data = JSON.parse(response.responseText);
+                            resolve(true);
+                        } else {
+                            resolve(false);
+                        }
+                    } catch (e) {
+                        reject(new Error('解析回應失敗'));
+                    }
+                },
+                onerror: function(error) {
+                    reject(new Error('連接錯誤'));
+                },
+                ontimeout: function() {
+                    reject(new Error('連接逾時'));
+                }
+            });
+        });
+    }
     
     // 監聽所有連結的滑鼠事件
     function setupLinkListeners() {
@@ -120,10 +354,25 @@
     }
 
     // 處理連結離開事件
-    function handleLinkLeave() {
+    function handleLinkLeave(event) {
         clearTimeout(hoverTimer);
-        hidePreview();
-        currentLink = null;
+        
+        // 檢查滑鼠是否移到預覽視窗上
+        // 如果是移到預覽視窗上，就不要隱藏預覽
+        const relatedTarget = event.relatedTarget;
+        if (previewElement && (previewElement.contains(relatedTarget) || previewElement === relatedTarget)) {
+            return;
+        }
+        
+        // 否則設定延遲隱藏，讓使用者有時間移到預覽視窗上
+        hoverTimer = setTimeout(() => {
+            // 再次檢查滑鼠是否在預覽視窗上
+            if (previewElement && previewElement.matches(':hover')) {
+                return;
+            }
+            hidePreview();
+            currentLink = null;
+        }, 200);
     }
 
     // 顯示預覽視窗
@@ -131,13 +380,39 @@
         if (!previewElement) {
             previewElement = document.createElement('div');
             previewElement.className = 'readornot-preview';
+            
+            // 增加滑鼠進入預覽視窗的事件處理
+            previewElement.addEventListener('mouseenter', () => {
+                clearTimeout(hoverTimer);
+            });
+            
+            // 增加滑鼠離開預覽視窗的事件處理
+            previewElement.addEventListener('mouseleave', () => {
+                // 設定延遲隱藏
+                hoverTimer = setTimeout(() => {
+                    hidePreview();
+                    currentLink = null;
+                }, 300);
+            });
+            
             document.body.appendChild(previewElement);
         }
 
-        // 計算位置 (顯示在滑鼠下方)
+        // 計算更貼近連結的位置
         const linkRect = link.getBoundingClientRect();
-        previewElement.style.left = `${linkRect.left}px`;
-        previewElement.style.top = `${linkRect.bottom + 10}px`;
+        const windowWidth = window.innerWidth;
+        
+        // 預設顯示在連結下方且對齊左側
+        let left = linkRect.left;
+        let top = linkRect.bottom + 5; // 更貼近連結，只留 5px 的間距
+        
+        // 確保預覽視窗不會超出視窗右側邊界
+        if (left + 400 > windowWidth) {
+            left = Math.max(5, windowWidth - 405);
+        }
+        
+        previewElement.style.left = `${left}px`;
+        previewElement.style.top = `${top}px`;
         
         // 顯示載入中訊息
         previewElement.innerHTML = `
@@ -156,6 +431,7 @@
         if (previewElement) {
             previewElement.style.display = 'none';
         }
+        isAnalyzing = false;
     }
 
     // 從連結抓取內容
@@ -172,11 +448,12 @@
                     const title = doc.querySelector('title')?.textContent || '無標題';
                     const content = extractMainContent(doc);
                     
-                    // 模擬 AI 分析結果
-                    const analysis = analyzeContent(content, title, url);
+                    // 先顯示關鍵字比對結果
+                    const keywordAnalysis = getKeywordAnalysis(title, content);
+                    updatePreview(title, keywordAnalysis, true);
                     
-                    // 更新預覽視窗
-                    updatePreview(title, analysis);
+                    // 然後在背景中使用 Ollama 分析內容
+                    analyzeWithOllama(content, title, url);
                 } else {
                     previewElement.innerHTML = `
                         <h3>無法載入預覽</h3>
@@ -222,65 +499,154 @@
         return mainContent.substring(0, 5000); // 限制文字長度
     }
 
-    // 分析內容 (模擬 AI 處理)
-    function analyzeContent(content, title, url) {
+    // 使用關鍵字分析內容
+    function getKeywordAnalysis(title, content) {
         // 簡單的關鍵字判斷來模擬 AI 分析
         const wordCount = content.split(' ').length;
         const hasEmotionalWords = /驚人|震驚|爆|超扯|慘|太扯|天才|最強|怒|氣炸|崩潰|超美|吃不下|可怕/.test(content + title);
         const isCelebrityRelated = /藝人|明星|網紅|歌手|演員|主持人|網友|粉絲|直播|開箱/.test(content);
         const hasSourceCitation = /研究|專家|調查|報告|表示|指出|分析|數據|證實/.test(content);
         const hasUsefulInfo = /教學|如何|方法|步驟|技巧|秘訣|建議|解決|提升|改善|注意|預防/.test(content);
-        const isNewsOrGossip = /今日|昨天|報導|消息|傳出|爆料|傳言|澄清|回應/.test(content);
-        
-        // 隨機生成星星評分 (更真實的實現會使用 NLP 或 AI 模型)
-        const informationDensity = hasUsefulInfo ? randomStar(2, 4) : (wordCount > 500 ? randomStar(2, 3) : randomStar(0, 2));
-        const emotionalImpact = hasEmotionalWords ? randomStar(3, 5) : randomStar(1, 3);
-        const perspective = randomStar(1, 5);
-        const originality = isCelebrityRelated ? randomStar(0, 2) : randomStar(1, 4);
-        const credibility = hasSourceCitation ? randomStar(2, 5) : randomStar(0, 3);
-        const usefulness = hasUsefulInfo ? randomStar(3, 5) : randomStar(0, 2);
-        
-        // 產生摘要
-        let summary = '';
-        if (isNewsOrGossip && isCelebrityRelated) {
-            summary = `這篇文章主要報導了與名人/網紅相關的消息，內容以描述事件經過為主，實際資訊量有限。`;
-        } else if (hasUsefulInfo) {
-            summary = `這篇文章包含一些實用資訊和建議，可能對某些讀者有幫助。`;
-        } else if (wordCount < 300) {
-            summary = `這篇文章內容相當精簡，資訊量有限，可能主要是為了吸引點閱。`;
-        } else {
-            summary = `這篇文章內容中等，包含一些基本資訊，但可能缺乏深度分析。`;
-        }
-        
-        // 估計閱讀時間
-        const readingTime = Math.max(1, Math.round(wordCount / 500)); // 假設平均閱讀速度為每分鐘500字
         
         return {
-            summary,
+            summary: '這是基於關鍵字的初步分析結果。正在使用 AI 進行更詳細的分析...',
             metrics: {
-                informationDensity,
-                emotionalImpact,
-                perspective,
-                originality,
-                credibility,
-                usefulness
+                informationDensity: hasUsefulInfo ? 3 : 1,
+                emotionalImpact: hasEmotionalWords ? 4 : 2,
+                perspective: 3,
+                originality: isCelebrityRelated ? 1 : 3,
+                credibility: hasSourceCitation ? 3 : 1,
+                usefulness: hasUsefulInfo ? 4 : 1
             },
-            readingTime
+            readingTime: Math.max(1, Math.round(wordCount / 500)),
+            isKeywordAnalysis: true
         };
     }
 
-    // 產生隨機星星評分 (指定範圍)
-    function randomStar(min, max) {
-        return Math.floor(Math.random() * (max - min + 1) + min);
+    // 使用 Ollama API 分析內容
+    function analyzeWithOllama(content, title, url) {
+        if (isAnalyzing) return;
+        isAnalyzing = true;
+        
+        const settings = getSettings();
+        
+        // 檢查 API URL 和模型是否已設定
+        if (!settings.ollamaApiUrl || !settings.ollamaModel) {
+            updatePreview(title, {
+                summary: "未設定 AI 分析，底下是基於關鍵字的初步分析結果。",
+                metrics: {
+                    informationDensity: 0,
+                    emotionalImpact: 0,
+                    perspective: 0,
+                    originality: 0,
+                    credibility: 0,
+                    usefulness: 0
+                },
+                readingTime: 0
+            }, false, "未設定 AI 分析");
+            isAnalyzing = false;
+            return;
+        }
+        
+        // 建立提示詞
+        const prompt = `
+請分析以下網頁內容，提供簡短摘要、評估指標和閱讀時間估計。
+不需要引言或額外說明，直接提供 JSON 格式的分析結果。
+
+網頁標題: ${title}
+網頁內容: ${content.substring(0, 3000)}
+
+必須按照以下 JSON 格式回應，所有值都是必須的:
+{
+    "summary": "60字內的內容摘要",
+    "metrics": {
+        "informationDensity": 0-5的整數 (資訊密度：文章包含多少實質內容),
+        "emotionalImpact": 0-5的整數 (情緒影響：對閱讀者情緒的影響程度),
+        "perspective": 0-5的整數 (立場：內容的價值觀傾向，5為最公正),
+        "originality": 0-5的整數 (原創性：內容獨特程度),
+        "credibility": 0-5的整數 (可信度：資訊來源的可靠性),
+        "usefulness": 0-5的整數 (實用性：對讀者的實際幫助程度)
+    },
+    "readingTime": 閱讀時間的分鐘數整數
+}
+        `;
+
+        // 建立超時處理
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('分析逾時')), ANALYSIS_TIMEOUT)
+        );
+        
+        // 呼叫 Ollama API
+        const ollamaPromise = new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: settings.ollamaApiUrl,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({
+                    model: settings.ollamaModel,
+                    prompt: prompt,
+                    stream: false
+                }),
+                onload: function(response) {
+                    try {
+                        if (response.status === 200) {
+                            const data = JSON.parse(response.responseText);
+                            resolve(data);
+                        } else {
+                            reject(new Error(`API 回應錯誤 (${response.status})`));
+                        }
+                    } catch (e) {
+                        reject(new Error('解析 API 回應失敗'));
+                    }
+                },
+                onerror: function() {
+                    reject(new Error('API 請求失敗'));
+                }
+            });
+        });
+        
+        // 使用 Promise.race 處理超時
+        Promise.race([ollamaPromise, timeoutPromise])
+            .then(data => {
+                try {
+                    // 解析 AI 的 JSON 回應
+                    const responseText = data.response || '';
+                    
+                    // 尋找 JSON 格式的部分
+                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) {
+                        throw new Error('找不到有效的 JSON 回應');
+                    }
+
+                    const jsonStr = jsonMatch[0];
+                    const analysis = JSON.parse(jsonStr);
+
+                    // 更新預覽視窗
+                    updatePreview(title, analysis, false);
+                } catch (error) {
+                    console.error('解析 AI 回應失敗:', error);
+                    updatePreview(title, getKeywordAnalysis(title, content), false, `AI 分析失敗: ${error.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('AI 分析錯誤:', error);
+                updatePreview(title, getKeywordAnalysis(title, content), false, `AI 分析錯誤: ${error.message}`);
+            })
+            .finally(() => {
+                isAnalyzing = false;
+            });
     }
 
     // 更新預覽視窗內容
-    function updatePreview(title, analysis) {
+    function updatePreview(title, analysis, isLoading, errorMessage) {
         if (!previewElement) return;
         
         const starRating = (count) => '★'.repeat(count) + '☆'.repeat(5 - count);
         
-        previewElement.innerHTML = `
+        // 顯示分析結果
+        let html = `
             <h3>${title}</h3>
             <p class="summary">${analysis.summary}</p>
             <div class="metrics">
@@ -310,9 +676,32 @@
                 </div>
             </div>
             <div class="footer">
-                閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot 預覽
+                閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot AI 預覽
+                <span class="readornot-preview-settings">設定</span>
             </div>
         `;
+
+        // 如果是關鍵字分析且仍在載入AI結果，顯示載入中的訊息
+        if (isLoading) {
+            // 檢查是否已設定 API URL 和模型，若未設定則不顯示「正在使用 AI」的訊息
+            const settings = getSettings();
+            if (settings.ollamaApiUrl && settings.ollamaModel) {
+                html += `<div class="ai-loading">正在使用 AI 進行更深入的分析...</div>`;
+            }
+        }
+        
+        // 如果有錯誤訊息，則顯示
+        if (errorMessage) {
+            html += `<div class="ai-loading" style="color: #d9534f;">${errorMessage}</div>`;
+        }
+        
+        previewElement.innerHTML = html;
+        
+        // 為設定按鈕加入事件處理
+        const settingsBtn = previewElement.querySelector('.readornot-preview-settings');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', showConfigPanel);
+        }
     }
 
     // 當 DOM 發生變化時重新設定連結監聽
@@ -338,8 +727,11 @@
     }
 
     // 初始化
+    // 確保在初始化時獲取模型名稱
+    getModelName();
     setupLinkListeners();
     observeDOMChanges();
+    createSettingsButton();
     
     // 當滑鼠點擊其他區域時隱藏預覽
     document.addEventListener('click', function(event) {
@@ -348,5 +740,5 @@
         }
     });
     
-    console.log('ReadOrNot 腳本已啟動');
+    console.log('ReadOrNot AI 腳本已啟動 (使用 Ollama API)');
 })();
