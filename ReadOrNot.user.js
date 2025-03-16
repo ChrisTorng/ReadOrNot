@@ -25,6 +25,33 @@
     const DEFAULT_HOVER_DELAY = 0.5; // 預設滑鼠移過觸發延遲（秒）
     const DEFAULT_ANALYSIS_TIMEOUT = 10; // 預設 AI 分析逾時時間（秒）
     
+    // 支援的網站主機列表
+    const SUPPORTED_HOSTS = [
+        "cna.com.tw",
+        "chinapost.com.tw",
+        "ctee.com.tw",
+        "ettoday.net",
+        "ftv.com.tw",
+        "libertytimes.com.tw",
+        "newtalk.tw",
+        "nownews.com",
+        "peoplenews.tw",
+        "storm.mg",
+        "taipeitimes.com",
+        "taiwannews.com.tw",
+        "taiwanplus.com",
+        "udn.com",
+        "upmedia.mg",
+        "thenewslens.com",
+        "yahoo.com",
+    ];
+
+    // 檢查連結是否屬於支援的網站主機
+    function isSupportedHost(url) {
+        const linkHost = new URL(url).hostname;
+        return SUPPORTED_HOSTS.some(host => linkHost.includes(host));
+    }
+
     // 從儲存中取得模型名稱，如果沒有則提示使用者輸入
     function getModelName() {
         let modelName = GM_getValue('ollama_model');
@@ -369,7 +396,7 @@
     // 處理連結懸停事件
     function handleLinkHover(event) {
         const link = event.target.closest('a');
-        if (!link || !link.href || link.href.startsWith('javascript:')) return;
+        if (!link || !link.href || link.href.startsWith('javascript:') || !isSupportedHost(link.href)) return;
         
         currentLink = link;
         
