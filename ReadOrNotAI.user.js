@@ -134,22 +134,19 @@
             font-style: italic;
         }
 
-        .readornot-settings {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: white;
-            border: 1px solid #ccc;
-            padding: 5px 10px;
+        .readornot-preview-settings {
+            cursor: pointer;
+            background: #f1f1f1;
+            padding: 3px 8px;
             border-radius: 4px;
             font-size: 12px;
-            cursor: pointer;
-            z-index: 10000;
-            opacity: 0.7;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
         }
 
-        .readornot-settings:hover {
-            opacity: 1;
+        .readornot-preview-settings:hover {
+            background: #e0e0e0;
         }
 
         .readornot-config {
@@ -226,13 +223,10 @@
         }
     }
 
-    // 建立設定按鈕
+    // 建立設定按鈕 (已移入預覽視窗內，此函數不再建立獨立的按鈕)
     function createSettingsButton() {
-        const button = document.createElement('div');
-        button.className = 'readornot-settings';
-        button.textContent = 'ReadOrNot 設定';
-        button.addEventListener('click', showConfigPanel);
-        document.body.appendChild(button);
+        // 不需建立全域按鈕，因為已經加入到預覽視窗內
+        console.log('ReadOrNot 設定按鈕已整合到預覽視窗中');
     }
 
     // 顯示設定面板
@@ -360,10 +354,25 @@
     }
 
     // 處理連結離開事件
-    function handleLinkLeave() {
+    function handleLinkLeave(event) {
         clearTimeout(hoverTimer);
-        hidePreview();
-        currentLink = null;
+        
+        // 檢查滑鼠是否移到預覽視窗上
+        // 如果是移到預覽視窗上，就不要隱藏預覽
+        const relatedTarget = event.relatedTarget;
+        if (previewElement && (previewElement.contains(relatedTarget) || previewElement === relatedTarget)) {
+            return;
+        }
+        
+        // 否則設定延遲隱藏，讓使用者有時間移到預覽視窗上
+        hoverTimer = setTimeout(() => {
+            // 再次檢查滑鼠是否在預覽視窗上
+            if (previewElement && previewElement.matches(':hover')) {
+                return;
+            }
+            hidePreview();
+            currentLink = null;
+        }, 200);
     }
 
     // 顯示預覽視窗
@@ -371,13 +380,39 @@
         if (!previewElement) {
             previewElement = document.createElement('div');
             previewElement.className = 'readornot-preview';
+            
+            // 增加滑鼠進入預覽視窗的事件處理
+            previewElement.addEventListener('mouseenter', () => {
+                clearTimeout(hoverTimer);
+            });
+            
+            // 增加滑鼠離開預覽視窗的事件處理
+            previewElement.addEventListener('mouseleave', () => {
+                // 設定延遲隱藏
+                hoverTimer = setTimeout(() => {
+                    hidePreview();
+                    currentLink = null;
+                }, 300);
+            });
+            
             document.body.appendChild(previewElement);
         }
 
-        // 計算位置 (顯示在滑鼠下方)
+        // 計算更貼近連結的位置
         const linkRect = link.getBoundingClientRect();
-        previewElement.style.left = `${linkRect.left}px`;
-        previewElement.style.top = `${linkRect.bottom + 10}px`;
+        const windowWidth = window.innerWidth;
+        
+        // 預設顯示在連結下方且對齊左側
+        let left = linkRect.left;
+        let top = linkRect.bottom + 5; // 更貼近連結，只留 5px 的間距
+        
+        // 確保預覽視窗不會超出視窗右側邊界
+        if (left + 400 > windowWidth) {
+            left = Math.max(5, windowWidth - 405);
+        }
+        
+        previewElement.style.left = `${left}px`;
+        previewElement.style.top = `${top}px`;
         
         // 顯示載入中訊息
         previewElement.innerHTML = `
@@ -622,6 +657,7 @@
             </div>
             <div class="footer">
                 閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot AI 預覽
+                <span class="readornot-preview-settings">設定</span>
             </div>
         `;
 
@@ -631,6 +667,12 @@
         }
         
         previewElement.innerHTML = html;
+        
+        // 為設定按鈕加入事件處理
+        const settingsBtn = previewElement.querySelector('.readornot-preview-settings');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', showConfigPanel);
+        }
     }
 
     // 當 DOM 發生變化時重新設定連結監聽
