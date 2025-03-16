@@ -21,8 +21,9 @@
 
     // Ollama API 設定
     const OLLAMA_API_URL = 'http://localhost:11434/api/generate'; // 本機 Ollama 服務位址
-    const DEFAULT_MODEL = undefined; // 預設模型名稱，作為建議值
-    const ANALYSIS_TIMEOUT = 10000; // AI 分析逾時時間 (毫秒)
+    const DEFAULT_MODEL = ''; // 預設模型名稱，作為建議值
+    const DEFAULT_HOVER_DELAY = 0.5; // 預設滑鼠移過觸發延遲（秒）
+    const DEFAULT_ANALYSIS_TIMEOUT = 10; // 預設 AI 分析逾時時間（秒）
     
     // 從儲存中取得模型名稱，如果沒有則提示使用者輸入
     function getModelName() {
@@ -178,6 +179,12 @@
             margin-bottom: 15px;
         }
 
+        .readornot-config input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 15px;
+        }
+
         .readornot-config button {
             padding: 5px 10px;
             background: #4CAF50;
@@ -207,7 +214,9 @@
     function getSettings() {
         const defaultSettings = {
             ollamaApiUrl: OLLAMA_API_URL,
-            ollamaModel: GM_getValue('ollama_model', DEFAULT_MODEL)
+            ollamaModel: GM_getValue('ollama_model', DEFAULT_MODEL),
+            hoverDelay: DEFAULT_HOVER_DELAY, // 預設滑鼠移過觸發延遲（秒）
+            analysisTimeout: DEFAULT_ANALYSIS_TIMEOUT // 預設 AI 分析逾時時間（秒）
         };
 
         const savedSettings = localStorage.getItem('readornot-settings');
@@ -237,7 +246,7 @@
         configPanel.className = 'readornot-config';
         configPanel.innerHTML = `
             <span class="close">&times;</span>
-            <h3>ReadOrNot AI 設定</h3>
+            <h3>ReadOrNot 設定</h3>
             <form>
                 <label for="ollama-api">Ollama API 網址:</label>
                 <input type="text" id="ollama-api" value="${settings.ollamaApiUrl}">
@@ -245,8 +254,19 @@
                 <label for="ollama-model">Ollama 模型名稱:</label>
                 <input type="text" id="ollama-model" value="${settings.ollamaModel}">
                 
-                <button type="button" id="save-settings">儲存設定</button>
-                <button type="button" id="test-connection">測試連接</button>
+                <label for="hover-delay">滑鼠移過觸發延遲 (秒):</label>
+                <input type="number" id="hover-delay" value="${settings.hoverDelay}" min="0.1" max="5" step="0.1">
+                
+                <label for="analysis-timeout">AI 分析逾時時間 (秒):</label>
+                <input type="number" id="analysis-timeout" value="${settings.analysisTimeout}" min="1" max="60">
+                
+                <div style="display: flex; justify-content: space-between;">
+                    <button type="button" id="test-connection">測試連接</button>
+                    <div>
+                        <button type="button" id="save-settings">確定</button>
+                        <button type="button" id="cancel-settings">取消</button>
+                    </div>
+                </div>
             </form>
             <div id="connection-status"></div>
         `;
@@ -261,9 +281,16 @@
         configPanel.querySelector('#save-settings').addEventListener('click', () => {
             const newSettings = {
                 ollamaApiUrl: configPanel.querySelector('#ollama-api').value,
-                ollamaModel: configPanel.querySelector('#ollama-model').value
+                ollamaModel: configPanel.querySelector('#ollama-model').value,
+                hoverDelay: parseFloat(configPanel.querySelector('#hover-delay').value),
+                analysisTimeout: parseFloat(configPanel.querySelector('#analysis-timeout').value)
             };
             saveSettings(newSettings);
+            document.body.removeChild(configPanel);
+        });
+
+        // 取消設定
+        configPanel.querySelector('#cancel-settings').addEventListener('click', () => {
             document.body.removeChild(configPanel);
         });
         
@@ -346,11 +373,15 @@
         
         currentLink = link;
         
+        // 從設定中取得滑鼠移過觸發延遲（秒）並轉換為毫秒
+        const settings = getSettings();
+        const hoverDelayMs = settings.hoverDelay * 1000;
+        
         // 延遲載入以避免快速滑過連結時觸發
         clearTimeout(hoverTimer);
         hoverTimer = setTimeout(() => {
             showPreview(link);
-        }, 500); // 延遲500毫秒
+        }, hoverDelayMs);
     }
 
     // 處理連結離開事件
@@ -571,9 +602,12 @@
 }
         `;
 
+        // 從設定中取得 AI 分析逾時時間（秒）並轉換為毫秒
+        const analysisTimeoutMs = settings.analysisTimeout * 1000;
+
         // 建立超時處理
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('分析逾時')), ANALYSIS_TIMEOUT)
+            setTimeout(() => reject(new Error('分析逾時')), analysisTimeoutMs)
         );
         
         // 呼叫 Ollama API
@@ -676,7 +710,7 @@
                 </div>
             </div>
             <div class="footer">
-                閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot AI 預覽
+                閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot 預覽
                 <span class="readornot-preview-settings">設定</span>
             </div>
         `;
@@ -740,5 +774,5 @@
         }
     });
     
-    console.log('ReadOrNot AI 腳本已啟動 (使用 Ollama API)');
+    console.log('ReadOrNot 腳本已啟動 (使用 Ollama API)');
 })();
