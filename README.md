@@ -14,8 +14,9 @@
    Chromium 相關瀏覽器需要開啟 [Dev mode](https://www.tampermonkey.net/faq.php#Q209)
 
 2. 
-   - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)
    - 沒有本機 Ollama: [安裝 ReadOrNot 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)
+   - 有本機 Ollama: [安裝 ReadOrNotAI 腳本](https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js)<br>
+     第一次使用，必須輸入 Ollama 模型名稱，之後可由 Tampermonkey 選單進行修改。
 
 ## 使用方式
 
@@ -25,6 +26,10 @@
 - 內容摘要
 - 評估指標（資訊密度、情緒影響、立場、原創性、可信度、實用性）
 - 預估閱讀時間
+
+## 原始碼
+
+[GitHub ReadOrNot](https://github.com/ChrisTorng/ReadOrNot)
 
 ## 授權條款
 

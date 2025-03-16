@@ -9,6 +9,9 @@
 // @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotAI.user.js
 // @match        *://*/*
 // @grant        GM_xmlhttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
 // @connect      *
 // @connect      localhost
 // ==/UserScript==
@@ -18,8 +21,37 @@
 
     // Ollama API 設定
     const OLLAMA_API_URL = 'http://localhost:11434/api/generate'; // 本機 Ollama 服務位址
-    const OLLAMA_MODEL = 'deepseek-r1'; // 使用的模型名稱，可改為您安裝的模型
+    const DEFAULT_MODEL = undefined; // 預設模型名稱，作為建議值
     const ANALYSIS_TIMEOUT = 10000; // AI 分析逾時時間 (毫秒)
+    
+    // 從儲存中取得模型名稱，如果沒有則提示使用者輸入
+    function getModelName() {
+        let modelName = GM_getValue('ollama_model');
+        if (!modelName) {
+            modelName = window.prompt(
+                '請輸入您的 Ollama 模型名稱 (例如: llama3, mistral, gemma)',
+                DEFAULT_MODEL
+            );
+            if (modelName) {
+                GM_setValue('ollama_model', modelName);
+            } else {
+                // 如果使用者取消，則使用預設值
+                modelName = DEFAULT_MODEL;
+                GM_setValue('ollama_model', modelName);
+            }
+        }
+        return modelName;
+    }
+    
+    // 在 Tampermonkey 選單中註冊更改模型的功能
+    GM_registerMenuCommand('更改 Ollama 模型名稱', () => {
+        const currentModel = GM_getValue('ollama_model', DEFAULT_MODEL);
+        const newModel = window.prompt('請輸入您的 Ollama 模型名稱:', currentModel);
+        if (newModel) {
+            GM_setValue('ollama_model', newModel);
+            alert(`Ollama 模型已更新為: ${newModel}`);
+        }
+    });
 
     // 設定樣式
     const style = document.createElement('style');
@@ -171,7 +203,7 @@
     function getSettings() {
         const defaultSettings = {
             ollamaApiUrl: OLLAMA_API_URL,
-            ollamaModel: OLLAMA_MODEL
+            ollamaModel: GM_getValue('ollama_model', DEFAULT_MODEL)
         };
 
         const savedSettings = localStorage.getItem('readornot-settings');
@@ -181,6 +213,10 @@
     // 儲存設定
     function saveSettings(settings) {
         localStorage.setItem('readornot-settings', JSON.stringify(settings));
+        // 同時更新 Tampermonkey 儲存的模型名稱
+        if (settings.ollamaModel) {
+            GM_setValue('ollama_model', settings.ollamaModel);
+        }
     }
 
     // 建立設定按鈕
@@ -614,6 +650,8 @@
     }
 
     // 初始化
+    // 確保在初始化時獲取模型名稱
+    getModelName();
     setupLinkListeners();
     observeDOMChanges();
     createSettingsButton();
