@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         ReadOrNot - 要看不要看?
+// @name         ReadOrNot 要看不看?
 // @namespace    https://github.com/ChrisTorng/ReadOrNot
-// @version      2025_03_16_0.3
-// @description  懸停於連結上時，使用本機 Ollama API 預覽文章內容並提供評估指標
+// @version      2025_03_17_0.4
+// @description  暫停於充斥低價值文章之網站連結上時，使用預設關鍵字快速分析目標網頁，另提供可選擇 AI 評估指標。
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
 // @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
@@ -52,34 +52,13 @@
         return SUPPORTED_HOSTS.some(host => linkHost.includes(host));
     }
 
-    // 從儲存中取得模型名稱，如果沒有則提示使用者輸入
+    // 從儲存中取得模型名稱
     function getModelName() {
-        let modelName = GM_getValue('ollama_model');
-        if (!modelName) {
-            modelName = window.prompt(
-                '請輸入您的 Ollama 模型名稱 (例如: llama3, mistral, gemma)',
-                DEFAULT_MODEL
-            );
-            if (modelName) {
-                GM_setValue('ollama_model', modelName);
-            } else {
-                // 如果使用者取消，則使用預設值
-                modelName = DEFAULT_MODEL;
-                GM_setValue('ollama_model', modelName);
-            }
-        }
-        return modelName;
+        return GM_getValue('ollama_model', DEFAULT_MODEL);
     }
     
-    // 在 Tampermonkey 選單中註冊更改模型的功能
-    GM_registerMenuCommand('更改 Ollama 模型名稱', () => {
-        const currentModel = GM_getValue('ollama_model', DEFAULT_MODEL);
-        const newModel = window.prompt('請輸入您的 Ollama 模型名稱:', currentModel);
-        if (newModel) {
-            GM_setValue('ollama_model', newModel);
-            alert(`Ollama 模型已更新為: ${newModel}`);
-        }
-    });
+    // 在 Tampermonkey 選單中註冊開啟設定視窗的功能
+    GM_registerMenuCommand('開啟設定視窗', showConfigPanel);
 
     // 設定樣式
     const style = document.createElement('style');
@@ -788,8 +767,6 @@
     }
 
     // 初始化
-    // 確保在初始化時獲取模型名稱
-    getModelName();
     setupLinkListeners();
     observeDOMChanges();
     createSettingsButton();
