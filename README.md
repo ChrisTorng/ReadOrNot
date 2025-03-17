@@ -29,9 +29,11 @@
 - 評估指標（資訊密度、情緒影響、立場、原創性、可信度、實用性）
 - 預估閱讀時間
 
-## 原始碼
+## 開發環境
 
-[GitHub ReadOrNot](https://github.com/ChrisTorng/ReadOrNot)
+- [GitHub ReadOrNot](https://github.com/ChrisTorng/ReadOrNot)
+- 將本資料夾啟用本機網頁伺服器 http://localhost:3000
+- 設定 `User matches` 增加 `locahost` 項目，以由本機 http://localhost:3000 存取開發環境 js/json/css 檔案
 
 ## 授權條款
 
