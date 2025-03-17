@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ReadOrNot 要看不看?
 // @namespace    https://github.com/ChrisTorng/ReadOrNot
-// @version      2025_03_17_0.4
+// @version      2025_03_17_0.5
 // @description  暫停於充斥低價值文章之網站連結上時，使用預設關鍵字快速分析目標網頁，另提供可選擇 AI 評估指標。
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
@@ -12,6 +12,9 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @grant        GM_getResourceText
+// @resource     REMOTE_CSS https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.css
+// @resource     LOCAL_CSS http://localhost:3000/ReadOrNot.css
 // @connect      *
 // @connect      localhost
 // ==/UserScript==
@@ -62,153 +65,73 @@
 
     // 設定樣式
     const style = document.createElement('style');
-    style.textContent = `
-        .readornot-preview {
-            position: fixed;
-            width: 400px;
-            max-height: 300px;
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            padding: 15px;
-            z-index: 10000;
-            overflow-y: auto;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            line-height: 1.4;
+    try {
+        // 判斷環境並載入對應的 CSS 資源
+        let cssContent;
+        // 嘗試載入本機 CSS
+        try {
+            cssContent = GM_getResourceText('LOCAL_CSS');
+            console.log('ReadOrNot: 使用本機 CSS 檔案');
+        } catch (localError) {
+            // 如果本機 CSS 載入失敗，嘗試載入遠端 CSS
+            try {
+                cssContent = GM_getResourceText('REMOTE_CSS');
+                console.log('ReadOrNot: 使用遠端 GitHub CSS 檔案');
+            } catch (remoteError) {
+                console.error('ReadOrNot: 無法載入 CSS 資源:', remoteError);
+                // 若兩者都失敗，使用內建的基本樣式
+                cssContent = getBasicCssStyles();
+                console.log('ReadOrNot: 使用內建基本樣式');
+            }
         }
-        
-        .readornot-preview h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-            color: #333;
-        }
-        
-        .readornot-preview p {
-            margin: 8px 0;
-        }
-        
-        .readornot-preview .summary {
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        
-        .readornot-preview .metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        
-        .readornot-preview .metric {
-            display: flex;
-            align-items: center;
-        }
-        
-        .readornot-preview .metric-name {
-            font-weight: bold;
-            margin-right: 5px;
-            min-width: 80px;
-        }
-        
-        .readornot-preview .stars {
-            color: #f39c12;
-        }
-        
-        .readornot-preview .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100px;
-            color: #666;
-        }
-        
-        .readornot-preview .footer {
-            margin-top: 15px;
-            font-size: 12px;
-            color: #666;
-            border-top: 1px solid #eee;
-            padding-top: 5px;
-            text-align: right;
-        }
-
-        .readornot-preview .ai-loading {
-            color: #666;
-            font-size: 12px;
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        .readornot-preview-settings {
-            cursor: pointer;
-            background: #f1f1f1;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            display: inline-block;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        .readornot-preview-settings:hover {
-            background: #e0e0e0;
-        }
-
-        .readornot-config {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            padding: 20px;
-            z-index: 10001;
-        }
-
-        .readornot-config h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-
-        .readornot-config label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .readornot-config input[type="text"] {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 15px;
-        }
-
-        .readornot-config input[type="number"] {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 15px;
-        }
-
-        .readornot-config button {
-            padding: 5px 10px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-
-        .readornot-config .close {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            cursor: pointer;
-        }
-    `;
+        style.textContent = cssContent;
+    } catch (e) {
+        console.error('ReadOrNot: CSS 載入過程發生錯誤:', e);
+        // 使用內建的基本樣式作為備用
+        style.textContent = getBasicCssStyles();
+    }
     document.head.appendChild(style);
+
+    // 基本樣式函式 - 作為備用
+    function getBasicCssStyles() {
+        return `
+            .readornot-preview {
+                position: fixed;
+                width: 400px;
+                max-height: 300px;
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                padding: 15px;
+                z-index: 10000;
+                overflow-y: auto;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+            
+            .readornot-preview h3 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                color: #333;
+            }
+            
+            /* 最小必要樣式 */
+            .readornot-config {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 400px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                padding: 20px;
+                z-index: 10001;
+            }
+        `;
+    }
 
     // 預覽視窗元素
     let previewElement = null;
