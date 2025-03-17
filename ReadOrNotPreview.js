@@ -65,6 +65,7 @@ function initializeReadOrNotPreview(
         configPanel.innerHTML = `
             <span class="close">&times;</span>
             <h3>ReadOrNot 設定</h3>
+            <p>若需要自訂需預覽之連結主機，請在 Tampermonkey 腳本管理頁面中，選擇 [ReadOrNot 要看不看?] - [Settings] - [Includes/Excludes] - [User matches] 中，加入需預覽目標主機名稱。</p>
             <form>
                 <label for="ollama-api">Ollama API 網址:</label>
                 <input type="text" id="ollama-api" value="${settings.ollamaApiUrl}">

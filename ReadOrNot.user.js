@@ -8,6 +8,23 @@
 // @downloadURL  https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
 // @updateURL    https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.user.js
 // @match        *://*/*
+// @match        cna.com.tw
+// @match        chinapost.com.tw
+// @match        ctee.com.tw
+// @match        ettoday.net
+// @match        ftv.com.tw
+// @match        libertytimes.com.tw
+// @match        newtalk.tw
+// @match        nownews.com
+// @match        peoplenews.tw
+// @match        storm.mg
+// @match        taipeitimes.com
+// @match        taiwannews.com.tw
+// @match        taiwanplus.com
+// @match        udn.com
+// @match        upmedia.mg
+// @match        thenewslens.com
+// @match        yahoo.com
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -34,25 +51,8 @@
     const DEFAULT_ANALYSIS_TIMEOUT = 10; // 預設 AI 分析逾時時間（秒）
     
     // 預覽的網站主機列表
-    const PREVIEWED_HOSTS = [
-        "cna.com.tw",
-        "chinapost.com.tw",
-        "ctee.com.tw",
-        "ettoday.net",
-        "ftv.com.tw",
-        "libertytimes.com.tw",
-        "newtalk.tw",
-        "nownews.com",
-        "peoplenews.tw",
-        "storm.mg",
-        "taipeitimes.com",
-        "taiwannews.com.tw",
-        "taiwanplus.com",
-        "udn.com",
-        "upmedia.mg",
-        "thenewslens.com",
-        "yahoo.com",
-    ];
+    const PREVIEWED_HOSTS = [...GM_info.script.options.override.orig_matches,
+        ...GM_info.script.options.override.use_matches];
 
     // 設定樣式
     const style = document.createElement('style');

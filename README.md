@@ -29,6 +29,8 @@
 - 評估指標（資訊密度、情緒影響、立場、原創性、可信度、實用性）
 - 預估閱讀時間
 
+若需要自訂需預覽之連結主機，請在 Tampermonkey 腳本管理頁面中，選擇 [ReadOrNot 要看不看?] - [Settings] - [Includes/Excludes] - [User matches] 中，加入需預覽目標主機名稱。
+
 ## 開發環境
 
 - [GitHub ReadOrNot](https://github.com/ChrisTorng/ReadOrNot)
