@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ReadOrNot 要看不看?
 // @namespace    https://github.com/ChrisTorng/ReadOrNot
-// @version      2025_03_17_0.6
+// @version      2025_03_18_0.7
 // @description  暫停於充斥低價值文章之網站連結上時，使用預設關鍵字快速分析目標網頁，另提供可選擇 AI 評估指標。
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
@@ -33,7 +33,7 @@
 // @resource     REMOTE_CSS https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNot.css
 // @resource     LOCAL_CSS http://localhost:3000/ReadOrNot.css
 // @require      https://github.com/ChrisTorng/ReadOrNot/raw/refs/heads/main/ReadOrNotPreview.js
-// @require      http://localhost:3000/ReadOrNotPreview.js
+/// @require      http://localhost:3000/ReadOrNotPreview.js
 // @connect      *
 // @connect      localhost
 // ==/UserScript==
@@ -42,7 +42,9 @@
     'use strict';
 
     const isLocalDevelopment = GM_info.script.options.override.use_matches.includes('localhost');
-    console.log('isLocalDevelopment', isLocalDevelopment);
+    if (isLocalDevelopment) {
+        console.log('isLocalDevelopment');
+    }
 
     // Ollama API 設定
     const OLLAMA_API_URL = 'http://localhost:11434/api/generate'; // 本機 Ollama 服務位址
@@ -80,7 +82,7 @@
             DEFAULT_HOVER_DELAY,
             DEFAULT_ANALYSIS_TIMEOUT
         );
-        console.log('ReadOrNot 腳本已啟動 (使用 Ollama API)');
+        //console.log('ReadOrNot 腳本已啟動');
     } else {
         console.error('ReadOrNot: 無法初始化預覽功能，預覽腳本可能未正確載入');
     }

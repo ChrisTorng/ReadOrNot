@@ -2,7 +2,7 @@
  * ReadOrNot 預覽功能
  * 此檔案包含預覽視窗相關的所有功能實現
  */
-console.log("ReadOrNot: 預覽功能腳本已載入");
+// console.log("ReadOrNot: 預覽功能腳本已載入");
 
 function initializeReadOrNotPreview(
     isLocalDevelopment,
