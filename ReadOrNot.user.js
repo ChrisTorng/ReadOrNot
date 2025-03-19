@@ -41,7 +41,7 @@
 (function() {
     'use strict';
 
-    const isLocalDevelopment = GM_info.script.options.override.use_matches.includes('localhost');
+    const isLocalDevelopment = GM_info.script.options.override.use_matches.includes('DevMode');
     if (isLocalDevelopment) {
         console.log('isLocalDevelopment');
     }
