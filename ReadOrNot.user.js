@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ReadOrNot 要看不看?
 // @namespace    https://github.com/ChrisTorng/ReadOrNot
-// @version      2025_03_18_0.7
+// @version      2025_03_20_0.8
 // @description  暫停於充斥低價值文章之網站連結上時，使用預設關鍵字快速分析目標網頁，另提供可選擇 AI 評估指標。
 // @author       ChrisTorng
 // @homepage     https://github.com/ChrisTorng/ReadOrNot/
