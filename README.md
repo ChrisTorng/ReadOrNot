@@ -26,8 +26,28 @@
 
 - 文章標題
 - 內容摘要 (若有設定 AI 模型)
-- 評估指標（資訊密度、情緒影響、立場、原創性、可信度、實用性）
+- 評估指標 (資訊密度、情緒影響、立場、原創性、可信度、實用性)
 - 預估閱讀時間
+
+## 預設支援預覽的目標主機
+
+- [cna.com.tw](https://cna.com.tw)
+- [chinapost.com.tw](https://chinapost.com.tw)
+- [ctee.com.tw](https://ctee.com.tw)
+- [ettoday.net](https://ettoday.net)
+- [ftv.com.tw](https://ftv.com.tw)
+- [libertytimes.com.tw](https://libertytimes.com.tw)
+- [newtalk.tw](https://newtalk.tw)
+- [nownews.com](https://nownews.com)
+- [peoplenews.tw](https://peoplenews.tw)
+- [storm.mg](https://storm.mg)
+- [taipeitimes.com](https://taipeitimes.com)
+- [taiwannews.com.tw](https://taiwannews.com.tw)
+- [taiwanplus.com](https://taiwanplus.com)
+- [udn.com](https://udn.com)
+- [upmedia.mg](https://upmedia.mg)
+- [thenewslens.com](https://thenewslens.com)
+- [yahoo.com](https://yahoo.com)
 
 若需要自訂需預覽之連結主機，請在 Tampermonkey 腳本管理頁面中，選擇 [ReadOrNot 要看不看?] - [Settings] - [Includes/Excludes] - [User matches] 中，加入需預覽目標主機名稱。
 
