@@ -1,14 +1,117 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>ReadOrNot Test</title>
-</head>
-<body>
-    <h1>ReadOrNot Test</h1>
-    <ul>
-        <li><a href="https://tw.news.yahoo.com/%E9%9B%B2%E4%BA%91%E7%A7%91%E6%8A%80%E5%91%BD%E6%A1%88%E7%96%91%E8%B2%A0%E8%B2%AC%E4%BA%BA%E6%87%B7%E7%96%91%E6%AD%BB%E8%80%85%E7%AB%8A%E6%A9%9F%E5%AF%86%E8%A6%81%E5%8F%A6%E8%B5%B7%E7%88%90%E7%81%B6%E7%A8%AE%E6%AE%BA%E6%A9%9F-%E6%AA%A2%E8%81%B2%E6%8A%BC%E7%A6%81%E8%A6%8B-023850349.html">tw.news.yahoo.com</a></li>
-    </ul>
-    
-</body>
-</html>
 
+<head>
+    <title>ReadOrNot 測試頁面</title>
+    <!-- 引入 ReadOrNot.css -->
+    <link rel="stylesheet" href="ReadOrNot.css">
+
+    <!-- 模擬 Tampermonkey 環境的腳本 -->
+    <script>
+        // 模擬 Tampermonkey API 和 GM_ 函式
+        const GM_info = {
+            script: {
+                options: {
+                    override: {
+                        orig_matches: [
+                            'cna.com.tw',
+                            'chinapost.com.tw',
+                            'ctee.com.tw',
+                            'ettoday.net',
+                            'ftv.com.tw',
+                            'libertytimes.com.tw',
+                            'newtalk.tw',
+                            'nownews.com',
+                            'peoplenews.tw',
+                            'storm.mg',
+                            'taipeitimes.com',
+                            'taiwannews.com.tw',
+                            'taiwanplus.com',
+                            'udn.com',
+                            'upmedia.mg',
+                            'thenewslens.com',
+                            'yahoo.com',
+                        ],
+                        use_matches: ['DevMode']
+                    }
+                }
+            }
+        };
+
+        // 模擬 GM_xmlhttpRequest
+        function GM_xmlhttpRequest(details) {
+            const xhr = new XMLHttpRequest();
+            xhr.open(details.method, details.url, true);
+
+            // 設定標頭
+            if (details.headers) {
+                Object.keys(details.headers).forEach(key => {
+                    xhr.setRequestHeader(key, details.headers[key]);
+                });
+            }
+
+            // 處理回應
+            xhr.onload = function () {
+                if (details.onload) {
+                    details.onload({
+                        status: xhr.status,
+                        responseText: xhr.responseText
+                    });
+                }
+            };
+
+            xhr.onerror = details.onerror;
+            xhr.ontimeout = details.ontimeout;
+
+            // 發送請求
+            if (details.data) {
+                xhr.send(details.data);
+            } else {
+                xhr.send();
+            }
+
+            return xhr;
+        }
+
+        // 儲存值的物件
+        const storedValues = {};
+
+        function GM_getValue(key, defaultValue) {
+            return storedValues[key] || defaultValue;
+        }
+
+        function GM_setValue(key, value) {
+            storedValues[key] = value;
+        }
+
+        function GM_registerMenuCommand(name, callback) {
+            console.log(`已註冊選單指令: ${name}`);
+        }
+
+        function GM_getResourceText(resourceName) {
+            // 如果要求 CSS 資源，直接回傳空字串
+            // 因為我們已經通過 <link> 標籤引入了 ReadOrNot.css
+            return '';
+        }
+    </script>
+</head>
+
+<body>
+    <h1>ReadOrNot 測試頁面</h1>
+    <p>這個頁面模擬了安裝 Tampermonkey 並載入 ReadOrNot.user.js 的環境</p>
+
+    <h2>測試連結：</h2>
+    <ul>
+        <li><a
+                href="https://tw.news.yahoo.com/%E9%9B%B2%E4%BA%91%E7%A7%91%E6%8A%80%E5%91%BD%E6%A1%88%E7%96%91%E8%B2%A0%E8%B2%AC%E4%BA%BA%E6%87%B7%E7%96%91%E6%AD%BB%E8%80%85%E7%AB%8A%E6%A9%9F%E5%AF%86%E8%A6%81%E5%8F%A6%E8%B5%B7%E7%88%90%E7%81%B6%E7%A8%AE%E6%AE%BA%E6%A9%9F-%E6%AA%A2%E8%81%B2%E6%8A%BC%E7%A6%81%E8%A6%8B-023850349.html">Yahoo
+                新聞連結</a></li>
+        <li><a href="https://udn.com/news/story/7315/7159442">聯合報連結</a></li>
+    </ul>
+
+    <script>
+    </script>
+    <script src="ReadOrNotPreview.js"></script>
+    <script src="ReadOrNot.user.js"></script>
+</body>
+
+</html>

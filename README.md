@@ -32,11 +32,10 @@
 ## 預設支援預覽的目標主機
 
 - [cna.com.tw](https://cna.com.tw)
-- [chinapost.com.tw](https://chinapost.com.tw)
 - [ctee.com.tw](https://ctee.com.tw)
 - [ettoday.net](https://ettoday.net)
 - [ftv.com.tw](https://ftv.com.tw)
-- [libertytimes.com.tw](https://libertytimes.com.tw)
+- [ltn.com.tw](https://ltn.com.tw)
 - [newtalk.tw](https://newtalk.tw)
 - [nownews.com](https://nownews.com)
 - [peoplenews.tw](https://peoplenews.tw)

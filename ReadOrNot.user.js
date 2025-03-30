@@ -41,9 +41,9 @@
 (function() {
     'use strict';
 
-    const isLocalDevelopment = GM_info.script.options.override.use_matches.includes('DevMode');
-    if (isLocalDevelopment) {
-        console.log('isLocalDevelopment');
+    const devMode = GM_info.script.options.override.use_matches.includes('DevMode');
+    if (devMode) {
+        console.log('ReadOrNot.user.js devMode');
     }
 
     // Ollama API 設定
@@ -62,7 +62,7 @@
         // 判斷環境並載入對應的 CSS 資源
         let cssContent;
         try {
-            cssContent = GM_getResourceText(isLocalDevelopment ? 'LOCAL_CSS' : 'REMOTE_CSS');
+            cssContent = GM_getResourceText(devMode ? 'LOCAL_CSS' : 'REMOTE_CSS');
         } catch (error) {
             console.error('ReadOrNot: CSS 載入失敗:', error);
         }
@@ -75,7 +75,6 @@
     // 初始化預覽功能
     if (typeof initializeReadOrNotPreview === 'function') {
         initializeReadOrNotPreview(
-            isLocalDevelopment,
             PREVIEWED_HOSTS,
             OLLAMA_API_URL,
             DEFAULT_MODEL,

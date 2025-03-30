@@ -2,10 +2,15 @@
  * ReadOrNot 預覽功能
  * 此檔案包含預覽視窗相關的所有功能實現
  */
+
+const devMode = GM_info.script.options.override.use_matches.includes('DevMode');
+if (devMode) {
+    console.log('ReadOrNotPreview.js devMode');
+}
+
 // console.log("ReadOrNot: 預覽功能腳本已載入");
 
 function initializeReadOrNotPreview(
-    isLocalDevelopment,
     PREVIEWED_HOSTS, 
     OLLAMA_API_URL, 
     DEFAULT_MODEL, 
