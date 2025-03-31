@@ -43,39 +43,132 @@
             }
         };
 
-        // 模擬 GM_xmlhttpRequest
+        // 模擬 GM_xmlhttpRequest - 修改後版本，繞過 CORS 限制
         function GM_xmlhttpRequest(details) {
-            const xhr = new XMLHttpRequest();
-            xhr.open(details.method, details.url, true);
+            console.log('模擬 GM_xmlhttpRequest 請求:', details.url);
+            
+            // 檢查是否是向外部網站發起的 GET 請求
+            if (details.method === 'GET' &&
+                details.url.includes('://') &&
+                !(details.url.includes('localhost') ||
+                  details.url.includes('127.0.0.1') ||
+                  details.url.includes('christorng.github.io'))) {
+                console.log('檢測到外部請求，提供模擬資料');
+                
+                // 延遲執行，模擬網路請求時間
+                setTimeout(() => {
+                    if (details.onload) {
+                        // 根據請求的 URL 提供不同的模擬回應
+                        let mockResponse = '';
+                        
+                        if (details.url.includes('yahoo.com')) {
+                            mockResponse = `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>雲亙科技命案疑負責人懷疑死者竊機密要另起爐灶種殺機 檢聲押禁見 - Yahoo奇摩新聞</title>
+                            </head>
+                            <body>
+                                <main>
+                                    <article>
+                                        <h1>雲亙科技命案疑負責人懷疑死者竊機密要另起爐灶種殺機 檢聲押禁見</h1>
+                                        <p>台北市內湖區瑞光路雲亙科技6日發生命案，現年35歲的該公司負責人張嫌涉嫌持刀刺死31歲王姓員工，檢警初步調查，張嫌疑似懷疑死者竊取公司機密，準備另起爐灶，才衍生殺機，昨(7)日上午士林地檢署檢察官複訊後，向法院聲請羈押張嫌並禁止訪視，張嫌則是否認犯行，辯稱「只是要嚇他一下」。</p>
+                                        <p>35歲張姓男子去年創立專精於AI相關技術的雲亙科技，並擔任執行長，而31歲的王姓男子則是張嫌碩士班同學，該公司事業部負責人，但張嫌近期似乎懷疑王男竊取公司機密，要另起爐灶，加上雙方對於公司營運有認知上的落差，6日王男到公司向張嫌討論公司未來規劃時，張嫌竟突然取出事前藏在辦公室的水果刀攻擊王男，在王男頸部猛刺，王男命危送醫不治。</p>
+                                        <p>事後張嫌被警方帶回調查時坦承犯案，但辯稱沒有殺人動機，只是想「嚇一嚇」王男，案發過程只是衝動之下失手誤殺，不過檢察官複訊後認為張嫌有逃亡、串證之虞，昨日上午向台北地院聲請羈押禁見，張嫌已由家人委任律師。</p>
+                                    </article>
+                                </main>
+                            </body>
+                            </html>`;
+                        } else {
+                            // 預設回應
+                            mockResponse = `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>模擬網頁內容</title>
+                            </head>
+                            <body>
+                                <main>
+                                    <article>
+                                        <h1>模擬網頁標題</h1>
+                                        <p>這是一個模擬的網頁內容，用於測試 ReadOrNot 功能。此內容僅用於開發測試目的。</p>
+                                        <p>由於 CORS 政策限制，在本地測試環境中無法直接取得外部網站的內容，因此使用此模擬資料代替。</p>
+                                        <p>在實際的 Tampermonkey 環境中，GM_xmlhttpRequest 可以繞過 CORS 限制訪問任何網站。</p>
+                                    </article>
+                                </main>
+                            </body>
+                            </html>`;
+                        }
+                        
+                        details.onload({
+                            status: 200,
+                            responseText: mockResponse
+                        });
+                    }
+                }, 500); // 模擬 500ms 的網路延遲
+                
+                return { abort: () => console.log('請求已中止') };
+            } else if (details.method === 'POST' && details.url.includes('ollama')) {
+                // 模擬 Ollama API 回應
+                setTimeout(() => {
+                    if (details.onload) {
+                        const mockOllamaResponse = {
+                            response: `{
+                                "summary": "這是一則報導雲亙科技命案，35歲公司負責人張嫌疑因懷疑31歲王姓員工竊取公司機密準備另起爐灶，而持刀攻擊導致其死亡。",
+                                "metrics": {
+                                    "informationDensity": 4,
+                                    "emotionalImpact": 5,
+                                    "perspective": 3,
+                                    "originality": 2,
+                                    "credibility": 4,
+                                    "usefulness": 2
+                                },
+                                "readingMinutes": 2
+                            }`
+                        };
+                        
+                        details.onload({
+                            status: 200,
+                            responseText: JSON.stringify(mockOllamaResponse)
+                        });
+                    }
+                }, 1500); // 模擬 1500ms 的 AI 分析時間
+                
+                return { abort: () => console.log('API 請求已中止') };
+            } else {
+                // 對於其他請求，使用原始的 XMLHttpRequest
+                const xhr = new XMLHttpRequest();
+                xhr.open(details.method, details.url, true);
 
-            // 設定標頭
-            if (details.headers) {
-                Object.keys(details.headers).forEach(key => {
-                    xhr.setRequestHeader(key, details.headers[key]);
-                });
-            }
-
-            // 處理回應
-            xhr.onload = function () {
-                if (details.onload) {
-                    details.onload({
-                        status: xhr.status,
-                        responseText: xhr.responseText
+                // 設定標頭
+                if (details.headers) {
+                    Object.keys(details.headers).forEach(key => {
+                        xhr.setRequestHeader(key, details.headers[key]);
                     });
                 }
-            };
 
-            xhr.onerror = details.onerror;
-            xhr.ontimeout = details.ontimeout;
+                // 處理回應
+                xhr.onload = function () {
+                    if (details.onload) {
+                        details.onload({
+                            status: xhr.status,
+                            responseText: xhr.responseText
+                        });
+                    }
+                };
 
-            // 發送請求
-            if (details.data) {
-                xhr.send(details.data);
-            } else {
-                xhr.send();
+                xhr.onerror = details.onerror;
+                xhr.ontimeout = details.ontimeout;
+
+                // 發送請求
+                if (details.data) {
+                    xhr.send(details.data);
+                } else {
+                    xhr.send();
+                }
+
+                return xhr;
             }
-
-            return xhr;
         }
 
         // 儲存值的物件
