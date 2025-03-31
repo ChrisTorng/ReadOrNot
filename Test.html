@@ -45,7 +45,7 @@
 
         // 模擬 GM_xmlhttpRequest - 修改後版本，繞過 CORS 限制
         function GM_xmlhttpRequest(details) {
-            console.log('模擬 GM_xmlhttpRequest 請求:', details.url);
+            console.log('GM_xmlhttpRequest:', details.url);
             
             // 檢查是否是向外部網站發起的 GET 請求
             if (details.method === 'GET' &&
@@ -109,7 +109,7 @@
                 
                 return { abort: () => console.log('請求已中止') };
             } else if (details.method === 'POST' && details.url.includes('ollama')) {
-                // 模擬 Ollama API 回應
+                console.log('模擬 Ollama API 回應');
                 setTimeout(() => {
                     if (details.onload) {
                         const mockOllamaResponse = {
@@ -136,7 +136,7 @@
                 
                 return { abort: () => console.log('API 請求已中止') };
             } else {
-                // 對於其他請求，使用原始的 XMLHttpRequest
+                console.log('對於其他請求，使用原始的 XMLHttpRequest');
                 const xhr = new XMLHttpRequest();
                 xhr.open(details.method, details.url, true);
 
