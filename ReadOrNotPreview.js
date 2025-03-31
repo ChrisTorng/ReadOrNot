@@ -373,7 +373,7 @@ function initializeReadOrNotPreview(
                 credibility: hasSourceCitation ? 3 : 1,
                 usefulness: hasUsefulInfo ? 4 : 1
             },
-            readingTime: Math.max(1, Math.round(wordCount / 500)),
+            readingMinutes: Math.max(1, Math.round(wordCount / 500)),
             isKeywordAnalysis: true
         };
     }
@@ -397,7 +397,7 @@ function initializeReadOrNotPreview(
                     credibility: 0,
                     usefulness: 0
                 },
-                readingTime: 0
+                readingMinutes: 0
             }, false, "未設定 AI 分析");
             isAnalyzing = false;
             return;
@@ -422,9 +422,10 @@ function initializeReadOrNotPreview(
         "credibility": 0-5的整數 (可信度：資訊來源的可靠性),
         "usefulness": 0-5的整數 (實用性：對讀者的實際幫助程度)
     },
-    "readingTime": 閱讀時間的分鐘數整數
+    "readingMinutes": 閱讀時間的分鐘數整數
 }
-        `;
+
+所有回應均以繁體中文台灣用語撰寫。`;
 
         // 從設定中取得 AI 分析逾時時間（秒）並轉換為毫秒
         const analysisTimeoutMs = settings.analysisTimeout * 1000;
@@ -534,7 +535,7 @@ function initializeReadOrNotPreview(
                 </div>
             </div>
             <div class="footer">
-                閱讀時間約 ${analysis.readingTime} 分鐘 | ReadOrNot 預覽
+                閱讀時間約 ${analysis.readingMinutes} 分鐘 | ReadOrNot 預覽
                 <span class="readornot-preview-settings">設定</span>
             </div>
         `;
